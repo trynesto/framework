@@ -1,0 +1,19 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use Nesto\Common\Attributes\Injectable;
+use Nesto\Common\Contracts\Middleware;
+use Nesto\Http\Request;
+use Psr\Http\Message\ResponseInterface;
+
+#[Injectable]
+final class {{ class }} implements Middleware
+{
+    public function use(Request $request, \Closure $next): ResponseInterface
+    {
+        return $next($request);
+    }
+}

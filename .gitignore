@@ -1,0 +1,25 @@
+# Dependencies (a library does not commit its lock file)
+/vendor/
+/composer.lock
+
+# Tooling and local state
+/.phpunit.cache/
+/.phpunit.result.cache
+/storage/
+/database/*.sqlite
+*.sqlite
+.env
+.env.*
+!.env.example
+.DS_Store
+.idea/
+.vscode/
+
+# Kept next to the framework locally, never published
+/examples/
+/sample/
+/website/
+/PLAN.md
+/DESIGN-BRIEF.md
+/resources/wappalyzer/
+/.claude/

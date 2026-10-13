@@ -1,0 +1,56 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+/**
+ * The global Nesto console (`composer global require nesto/framework`): `nesto new my-api` creates a project.
+ * Inside a project, `nesto <command>` runs the same commands as `php nesto <command>`, with the project's own
+ * framework version.
+ *
+ * 1. Locate the project root (walk up from the cwd until a composer.json is found).
+ * 2. Load that project's vendor/autoload.php when it has Nesto installed (or is the framework checkout itself);
+ *    otherwise the autoloader this binary was installed with (globally, as a dependency, or the checkout's).
+ * 3. Read nesto.config.php (optional) and register built-in + user commands (Nesto\Cli\Console).
+ * 4. Dispatch. The application context is only booted by commands that need it.
+ */
+
+$cwd = getcwd() ?: __DIR__;
+$projectRoot = null;
+for ($dir = $cwd; ; $dir = dirname($dir)) {
+    if (is_file($dir . '/composer.json')) {
+        $projectRoot = $dir;
+        break;
+    }
+    if ($dir === dirname($dir)) {
+        break;
+    }
+}
+
+$frameworkRoot = dirname(__DIR__);
+$isNestoProject = $projectRoot !== null && (
+    is_dir($projectRoot . '/vendor/nesto/framework')
+    || realpath($projectRoot) === realpath($frameworkRoot)
+);
+
+$autoloads = array_filter([
+    $isNestoProject ? $projectRoot . '/vendor/autoload.php' : null,
+    $frameworkRoot . '/vendor/autoload.php',       // running from the framework checkout
+    $frameworkRoot . '/../../autoload.php',        // installed with Composer (vendor/nesto/framework/bin), globally or in a project
+]);
+$loaded = false;
+foreach ($autoloads as $file) {
+    if (is_file($file)) {
+        require $file;
+        $loaded = true;
+        break;
+    }
+}
+if (! $loaded) {
+    fwrite(STDERR, "Could not find vendor/autoload.php. Run \"composer install\" first.\n");
+    exit(1);
+}
+
+$context = $isNestoProject ? \Nesto\Cli\ProjectContext::fromDir($projectRoot) : null;
+
+exit(\Nesto\Cli\Console::application($context, 'nesto')->run(array_slice($argv, 1)));

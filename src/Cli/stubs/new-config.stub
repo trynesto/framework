@@ -1,0 +1,20 @@
+<?php
+
+declare(strict_types=1);
+
+/**
+ * Nesto CLI configuration (read by `php nesto`).
+ */
+return [
+    'rootModule' => App\AppModule::class,
+    'sourceRoot' => 'src',
+    'appNamespace' => 'App',
+    'bootstrap' => 'public/index.php',
+    'entities' => 'src/**/Entities',
+    'migrations' => 'database/migrations',
+    'seeders' => 'database/seeders',
+    'tests' => 'tests',
+    'testNamespace' => 'Tests',
+    // Your own console commands (classes extending Nesto\Cli\Command):
+    'commands' => [],
+];

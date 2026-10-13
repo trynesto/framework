@@ -1,0 +1,13 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+/**
+ * Payload for PATCH /{{ route }}/{id}. Every property is optional (partial update).
+ */
+final class {{ class }}
+{
+    public ?string $name = null;
+}

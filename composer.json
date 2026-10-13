@@ -1,0 +1,90 @@
+{
+    "name": "nesto/framework",
+    "description": "Nesto — a PHP 8.3 framework: modules, dependency injection, guards, pipes, interceptors, filters, validation, an ORM and a Prisma-style client, OpenAPI, queues, scheduling and a CLI, all with attributes.",
+    "type": "library",
+    "keywords": [
+        "nestjs",
+        "nest",
+        "framework",
+        "php",
+        "api",
+        "rest",
+        "attributes",
+        "dependency-injection",
+        "modules",
+        "orm",
+        "typeorm",
+        "prisma",
+        "openapi",
+        "swagger",
+        "psr-7",
+        "psr-15",
+        "frankenphp"
+    ],
+    "homepage": "https://github.com/trynesto/framework",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Hussein Alaa",
+            "homepage": "https://github.com/trynesto"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/trynesto/framework/issues",
+        "source": "https://github.com/trynesto/framework"
+    },
+    "require": {
+        "php": ">=8.3",
+        "ext-json": "*",
+        "ext-pdo": "*",
+        "league/flysystem": "^3.29",
+        "nyholm/psr7": "^1.8",
+        "nyholm/psr7-server": "^1.1",
+        "psr/container": "^2.0",
+        "psr/event-dispatcher": "^1.0",
+        "psr/http-factory": "^1.0",
+        "psr/http-message": "^2.0",
+        "psr/http-server-handler": "^1.0",
+        "psr/http-server-middleware": "^1.0",
+        "psr/log": "^3.0",
+        "psr/simple-cache": "^3.0"
+    },
+    "require-dev": {
+        "league/flysystem-aws-s3-v3": "^3.29",
+        "league/flysystem-memory": "^3.29",
+        "phpunit/phpunit": "^11.0"
+    },
+    "suggest": {
+        "ext-pdo_pgsql": "PostgreSQL connections (ORM, Prisma client)",
+        "ext-pdo_mysql": "MySQL / MariaDB connections (ORM, Prisma client)",
+        "ext-pdo_sqlite": "SQLite connections (ORM, Prisma client)",
+        "ext-pcntl": "Graceful shutdown of queue/schedule workers on SIGTERM/SIGINT",
+        "ext-fileinfo": "MIME type detection for uploaded files",
+        "league/flysystem-aws-s3-v3": "S3 (and S3-compatible: R2, MinIO, Spaces) disks in config/filesystems.php",
+        "league/flysystem-memory": "In-memory disks for tests",
+        "spiral/roadrunner-http": "Run the application as a RoadRunner worker"
+    },
+    "autoload": {
+        "psr-4": {
+            "Nesto\\": "src/"
+        },
+        "files": [
+            "src/Common/helpers.php",
+            "src/Orm/Operators/functions.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Nesto\\Tests\\": "tests/"
+        }
+    },
+    "bin": [
+        "bin/nesto"
+    ],
+    "config": {
+        "sort-packages": true,
+        "optimize-autoloader": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

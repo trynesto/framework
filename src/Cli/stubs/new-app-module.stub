@@ -1,0 +1,20 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App;
+
+use App\App\AppController;
+use App\App\AppService;
+use Nesto\Common\Attributes\Module;
+use Nesto\Config\ConfigModule;
+
+#[Module(
+    // .env + config/*.php (and the config of packages installed with `php nesto add`), injectable everywhere
+    imports: [new ConfigModule(isGlobal: true)],
+    controllers: [AppController::class],
+    providers: [AppService::class],
+)]
+final class AppModule
+{
+}

@@ -1,0 +1,25 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\App;
+
+use App\App\AppController;
+use App\App\AppService;
+use Nesto\Testing\Test;
+use Nesto\Testing\TestCase;
+
+final class AppControllerTest extends TestCase
+{
+    public function testGetHello(): void
+    {
+        $module = Test::createTestingModule([
+            'controllers' => [AppController::class],
+            'providers' => [AppService::class],
+        ])->compile();
+
+        self::assertSame('Hello World!', $module->get(AppController::class)->getHello());
+
+        $module->request()->get('/')->expect(200)->assertSee('Hello World!');
+    }
+}

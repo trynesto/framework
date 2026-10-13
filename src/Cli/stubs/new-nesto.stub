@@ -1,0 +1,18 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+/*
+ * {{ name }} console: `php nesto <command>` (php nesto list, php nesto g resource cats, ...).
+ * Your own commands are registered in nesto.config.php.
+ */
+
+if (! is_file(__DIR__ . '/vendor/autoload.php')) {
+    fwrite(STDERR, "Dependencies are missing. Run \"composer install\" first.\n");
+    exit(1);
+}
+
+require __DIR__ . '/vendor/autoload.php';
+
+exit(Nesto\Cli\Console::run(__DIR__, $argv));

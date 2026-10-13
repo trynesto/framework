@@ -1,0 +1,18 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use Nesto\Common\Attributes\Module;
+use Nesto\Orm\OrmModule;
+use {{ namespace }}\Entities\{{ entity }}{{ entityAs }};
+
+#[Module(
+    imports: [[OrmModule::class, 'forFeature', [[{{ entityAlias }}::class]]]],
+    controllers: [{{ controller }}::class],
+    providers: [{{ service }}::class],
+)]
+final class {{ class }}
+{
+}

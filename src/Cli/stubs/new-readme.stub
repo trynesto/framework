@@ -1,0 +1,37 @@
+# {{ name }}
+
+A [Nesto](https://github.com/trynesto/framework) application
+
+## Install
+
+```bash
+composer install
+cp .env.example .env   # `nesto new` already created .env
+```
+
+## Run
+
+```bash
+# development server (PHP built-in server, serves public/)
+php nesto start --port=3000
+# or without the CLI
+php -S 127.0.0.1:3000 -t public public/index.php
+```
+
+Then open http://127.0.0.1:3000/api — you should see `Hello World!`.
+
+## Test
+
+```bash
+vendor/bin/phpunit
+```
+
+## Generate code
+
+```bash
+php nesto g resource cats        # module + controller + service + DTOs + entity
+php nesto g controller cats      # auto-registered in src/Cats/CatsModule.php
+php nesto g service cats
+php nesto routes                 # list every route
+php nesto --help
+```

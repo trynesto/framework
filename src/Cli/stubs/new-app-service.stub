@@ -1,0 +1,16 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\App;
+
+use Nesto\Common\Attributes\Injectable;
+
+#[Injectable]
+final class AppService
+{
+    public function getHello(): string
+    {
+        return 'Hello World!';
+    }
+}

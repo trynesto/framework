@@ -1,0 +1,25 @@
+<?php
+
+declare(strict_types=1);
+
+use App\AppModule;
+use Nesto\Core\NestoFactory;
+use Nesto\Validation\ValidationPipe;
+
+require dirname(__DIR__) . '/vendor/autoload.php';
+
+// Serve static files directly when running under `php -S`.
+if (PHP_SAPI === 'cli-server') {
+    $file = __DIR__ . parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+    if ($file !== __DIR__ . '/' && is_file($file) && ! str_ends_with($file, '.php')) {
+        return false;
+    }
+}
+
+// Error details in 500 responses follow APP_DEBUG (read after ConfigModule has loaded .env).
+$app = NestoFactory::create(AppModule::class);
+$app->setGlobalPrefix('api');
+if (class_exists(ValidationPipe::class)) {
+    $app->useGlobalPipes(new ValidationPipe(whitelist: true, transform: true));
+}
+$app->listen();

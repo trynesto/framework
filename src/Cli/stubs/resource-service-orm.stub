@@ -1,0 +1,58 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use Nesto\Common\Attributes\Injectable;
+use Nesto\Common\Exceptions\NotFoundException;
+use Nesto\Orm\Attributes\InjectRepository;
+use Nesto\Orm\Repository;
+use {{ namespace }}\Dto\{{ createDto }};
+use {{ namespace }}\Dto\{{ updateDto }};
+use {{ namespace }}\Entities\{{ entity }}{{ entityAs }};
+
+#[Injectable]
+final class {{ class }}
+{
+    /** @param Repository<{{ entityAlias }}> ${{ repoVar }} */
+    public function __construct(
+        #[InjectRepository({{ entityAlias }}::class)] private readonly Repository ${{ repoVar }},
+    ) {}
+
+    public function create({{ createDto }} $dto): {{ entityAlias }}
+    {
+        $entity = new {{ entityAlias }}();
+        $entity->name = $dto->name;
+
+        return $this->{{ repoVar }}->save($entity);
+    }
+
+    /** @return list<{{ entityAlias }}> */
+    public function findAll(): array
+    {
+        return $this->{{ repoVar }}->find();
+    }
+
+    public function findOne(int $id): {{ entityAlias }}
+    {
+        return $this->{{ repoVar }}->findOneBy(['id' => $id]) ?? throw new NotFoundException("{{ entity }} #$id not found");
+    }
+
+    public function update(int $id, {{ updateDto }} $dto): {{ entityAlias }}
+    {
+        $entity = $this->findOne($id);
+        foreach (get_object_vars($dto) as $property => $value) {
+            if ($value !== null && property_exists($entity, $property)) {
+                $entity->{$property} = $value;
+            }
+        }
+
+        return $this->{{ repoVar }}->save($entity);
+    }
+
+    public function remove(int $id): void
+    {
+        $this->{{ repoVar }}->remove($this->findOne($id));
+    }
+}

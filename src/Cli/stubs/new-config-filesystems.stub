@@ -1,0 +1,45 @@
+<?php
+
+declare(strict_types=1);
+
+/*
+ * Disks for FilesystemManager / Storage / $file->store('avatars', 'public').
+ * Drivers: "local", "s3" (composer require league/flysystem-aws-s3-v3; also R2, MinIO, Spaces via "endpoint"),
+ * or your own: FilesystemManager::extend('ftp', fn (array $config) => new FtpAdapter(...)), or
+ * 'driver' => MyDriver::class (an invokable class that receives this disk's config).
+ */
+
+return [
+    'default' => env('FILESYSTEM_DISK', 'local'),
+
+    'disks' => [
+        'local' => [
+            'driver' => 'local',
+            'root' => storage_path('app/private'),
+        ],
+
+        // Served at APP_URL/storage once `php nesto storage:link` created public/storage.
+        'public' => [
+            'driver' => 'local',
+            'root' => storage_path('app/public'),
+            'url' => rtrim((string) env('APP_URL', 'http://localhost:3000'), '/') . '/storage',
+            'visibility' => 'public',
+        ],
+
+        's3' => [
+            'driver' => 's3',
+            'key' => env('AWS_ACCESS_KEY_ID'),
+            'secret' => env('AWS_SECRET_ACCESS_KEY'),
+            'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
+            'bucket' => env('AWS_BUCKET'),
+            'url' => env('AWS_URL'),
+            'endpoint' => env('AWS_ENDPOINT'),
+            'use_path_style_endpoint' => (bool) env('AWS_USE_PATH_STYLE_ENDPOINT', false),
+        ],
+    ],
+
+    // `php nesto storage:link` creates these symlinks.
+    'links' => [
+        public_path('storage') => storage_path('app/public'),
+    ],
+];

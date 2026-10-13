@@ -1,0 +1,13 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+/**
+ * Payload for POST /{{ route }}. Decorate properties with Nesto\Validation attributes to validate them.
+ */
+final class {{ class }}
+{
+    public string $name;
+}

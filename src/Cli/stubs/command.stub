@@ -1,0 +1,28 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use Nesto\Cli\Command;
+
+/**
+ * Register it in nesto.config.php:  'commands' => [\{{ namespace }}\{{ class }}::class]
+ * then run:                        php nesto {{ commandName }}
+ *
+ * Need a service? `$this->get(SomeService::class)` resolves it from the booted application.
+ */
+final class {{ class }} extends Command
+{
+    protected string $signature = '{{ commandName }} {name? : Who to greet} {--loud : Shout the greeting}';
+    protected string $description = 'Describe what {{ commandName }} does';
+
+    public function handle(): int
+    {
+        $name = $this->argument('name') ?? 'World';
+        $greeting = "Hello, $name!";
+        $this->info($this->option('loud') ? strtoupper($greeting) : $greeting);
+
+        return self::SUCCESS;
+    }
+}

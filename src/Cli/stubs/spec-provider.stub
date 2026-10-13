@@ -1,0 +1,21 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ testNamespace }};
+
+use {{ fqcn }};
+use Nesto\Testing\Test;
+use Nesto\Testing\TestCase;
+
+final class {{ class }} extends TestCase
+{
+    public function testItIsDefined(): void
+    {
+        $module = Test::createTestingModule([
+            'providers' => [{{ subject }}::class],
+        ])->compile();
+
+        self::assertInstanceOf({{ subject }}::class, $module->get({{ subject }}::class));
+    }
+}

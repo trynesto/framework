@@ -1,0 +1,19 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use Nesto\Common\Attributes\Injectable;
+use Nesto\Common\Contracts\CallHandler;
+use Nesto\Common\Contracts\Interceptor;
+use Nesto\Core\ExecutionContext;
+
+#[Injectable]
+final class {{ class }} implements Interceptor
+{
+    public function intercept(ExecutionContext $context, CallHandler $next): mixed
+    {
+        return $next->handle();
+    }
+}

@@ -1,0 +1,27 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ testNamespace }};
+
+use {{ moduleFqcn }};{{ ormUse }}
+use Nesto\Testing\Test;
+use Nesto\Testing\TestCase;
+
+final class {{ class }} extends TestCase
+{
+    public function testCrud(): void
+    {
+        $module = Test::createTestingModule(['imports' => [{{ ormImport }}{{ module }}::class]])->compile();
+
+        $created = $module->request()->post('/{{ route }}', ['name' => 'First'])->expect(201);
+        $id = $created->json('id');
+        self::assertSame('First', $created->json('name'));
+
+        $module->request()->get('/{{ route }}')->expect(200)->assertJsonCount(1);
+        $module->request()->get("/{{ route }}/$id")->expect(200)->assertJson(['name' => 'First']);
+        $module->request()->patch("/{{ route }}/$id", ['name' => 'Renamed'])->expect(200)->assertJsonPath('name', 'Renamed');
+        $module->request()->delete("/{{ route }}/$id")->expect(204);
+        $module->request()->get("/{{ route }}/$id")->expect(404);
+    }
+}

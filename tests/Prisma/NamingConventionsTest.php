@@ -1,0 +1,193 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Nesto\Tests\Prisma;
+
+use Nesto\Orm\Schema\ForeignKey;
+use Nesto\Orm\Schema\Index;
+use Nesto\Orm\SqlExpression;
+use Nesto\Prisma\Migrate\SchemaTranslator;
+use Nesto\Prisma\Schema\NamingConventions;
+use Nesto\Prisma\Schema\SchemaLoader;
+use PHPUnit\Framework\TestCase;
+
+final class NamingConventionsTest extends TestCase
+{
+    public function testDefaultNames(): void
+    {
+        self::assertSame('Post_pkey', NamingConventions::primaryKeyName('Post', 'postgresql'));
+        self::assertSame('User_email_key', NamingConventions::uniqueIndexName('User', ['email'], 'postgresql'));
+        self::assertSame('Post_authorId_slug_key', NamingConventions::uniqueIndexName('Post', ['authorId', 'slug'], 'mysql'));
+        self::assertSame('Post_title_createdAt_idx', NamingConventions::normalIndexName('Post', ['title', 'createdAt'], 'sqlite'));
+        self::assertSame('Post_authorId_fkey', NamingConventions::foreignKeyName('Post', ['authorId'], 'postgresql'));
+        self::assertSame('PostToUser', NamingConventions::relationName('User', 'Post'));
+        self::assertSame('PostToUser', NamingConventions::relationName('Post', 'User'));
+        self::assertSame('_CategoryToPost', NamingConventions::joinTableName('CategoryToPost'));
+    }
+
+    public function testLongNamesAreTruncatedToTheIdentifierLimit(): void
+    {
+        $table = str_repeat('a', 40);
+        $name = NamingConventions::uniqueIndexName($table, [str_repeat('b', 30)], 'postgresql');
+        self::assertSame(63, strlen($name));
+        self::assertStringEndsWith('_key', $name);
+        self::assertSame(64, strlen(NamingConventions::foreignKeyName($table, [str_repeat('b', 30)], 'mysql')));
+        self::assertSame(63, strlen(NamingConventions::primaryKeyName(str_repeat('t', 70), 'postgresql')));
+        self::assertSame(strlen($table) + 32, strlen(NamingConventions::normalIndexName($table, [str_repeat('b', 27)], 'sqlite')));
+    }
+
+    private static function translate(string $provider, string $models, string $extra = ''): array
+    {
+        $url = ['postgresql' => 'postgresql://x@y/z', 'mysql' => 'mysql://x@y/z', 'sqlite' => 'file:x.db'][$provider];
+        $document = SchemaLoader::load("datasource db {\n  provider = \"$provider\"\n  url = \"$url\"\n$extra}\n\n$models");
+
+        return SchemaTranslator::translate($document)->tables;
+    }
+
+    private const BLOG = <<<'PRISMA'
+        model User {
+          id        Int       @id @default(autoincrement())
+          email     String    @unique
+          name      String?
+          score     Float     @default(0)
+          balance   Decimal   @default(1.25)
+          active    Boolean   @default(true)
+          meta      Json?
+          avatar    Bytes?
+          big       BigInt?
+          createdAt DateTime  @default(now())
+          updatedAt DateTime  @updatedAt
+          code      String    @default(cuid())
+          slug      String    @db.VarChar(100) @default(dbgenerated("'x'"))
+          posts     Post[]
+          tags      Tag[]
+        }
+
+        model Post {
+          id       Int     @id @default(autoincrement())
+          title    String
+          author   User?   @relation(fields: [authorId], references: [id])
+          authorId Int?
+          editor   User2   @relation(fields: [editorId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "post_editor")
+          editorId String
+
+          @@index([title(sort: Desc)])
+        }
+
+        model User2 {
+          id    String @id
+          posts Post[]
+
+          @@map("editors")
+        }
+
+        model Tag {
+          id    String @id @default(uuid())
+          users User[]
+        }
+        PRISMA;
+
+    public function testPostgresTables(): void
+    {
+        $tables = self::translate('postgresql', self::BLOG);
+        self::assertSame(['User', 'Post', 'editors', 'Tag', '_TagToUser'], array_keys($tables));
+        $user = $tables['User'];
+        $types = array_map(fn ($c) => $c->sqlType, $user->columns);
+        self::assertSame([
+            'id' => 'SERIAL', 'email' => 'TEXT', 'name' => 'TEXT', 'score' => 'DOUBLE PRECISION', 'balance' => 'DECIMAL(65,30)',
+            'active' => 'BOOLEAN', 'meta' => 'JSONB', 'avatar' => 'BYTEA', 'big' => 'BIGINT', 'createdAt' => 'TIMESTAMP(3)',
+            'updatedAt' => 'TIMESTAMP(3)', 'code' => 'TEXT', 'slug' => 'VARCHAR(100)',
+        ], $types);
+        self::assertSame(['id'], $user->primaryKey);
+        self::assertSame('User_pkey', $user->primaryKeyName);
+        self::assertTrue($user->columns['id']->autoIncrement);
+        self::assertTrue($user->columns['name']->nullable);
+        self::assertFalse($user->columns['email']->nullable);
+        self::assertEquals(new SqlExpression('CURRENT_TIMESTAMP'), $user->columns['createdAt']->default);
+        self::assertFalse($user->columns['updatedAt']->hasDefault, '@updatedAt is set by the client');
+        self::assertFalse($user->columns['code']->hasDefault, 'cuid() is generated by the client');
+        self::assertTrue($user->columns['active']->default);
+        self::assertEquals(new SqlExpression('1.25'), $user->columns['balance']->default);
+        self::assertEquals(new SqlExpression("'x'"), $user->columns['slug']->default);
+        self::assertEquals([new Index(['email'], true, 'User_email_key', true)], $user->indexes);
+
+        $post = $tables['Post'];
+        self::assertEquals([
+            new ForeignKey(['authorId'], 'User', ['id'], 'SET NULL', 'CASCADE', 'Post_authorId_fkey', true),
+            new ForeignKey(['editorId'], 'editors', ['id'], 'CASCADE', 'NO ACTION', 'post_editor', true),
+        ], $post->foreignKeys);
+        self::assertEquals([new Index(['title'], false, 'Post_title_idx', true, sorts: ['title' => 'DESC'])], $post->indexes);
+
+        $join = $tables['_TagToUser'];
+        self::assertSame(['A' => 'TEXT', 'B' => 'INTEGER'], array_map(fn ($c) => $c->sqlType, $join->columns));
+        self::assertSame(['A', 'B'], $join->primaryKey);
+        self::assertSame('_TagToUser_AB_pkey', $join->primaryKeyName);
+        self::assertEquals([new Index(['B'], false, '_TagToUser_B_index', true)], $join->indexes);
+        self::assertEquals([
+            new ForeignKey(['A'], 'Tag', ['id'], 'CASCADE', 'CASCADE', '_TagToUser_A_fkey', true),
+            new ForeignKey(['B'], 'User', ['id'], 'CASCADE', 'CASCADE', '_TagToUser_B_fkey', true),
+        ], $join->foreignKeys);
+    }
+
+    public function testMysqlTables(): void
+    {
+        $tables = self::translate('mysql', self::BLOG);
+        $user = $tables['User'];
+        self::assertSame([
+            'id' => 'INTEGER', 'email' => 'VARCHAR(191)', 'name' => 'VARCHAR(191)', 'score' => 'DOUBLE', 'balance' => 'DECIMAL(65,30)',
+            'active' => 'TINYINT(1)', 'meta' => 'JSON', 'avatar' => 'LONGBLOB', 'big' => 'BIGINT', 'createdAt' => 'DATETIME(3)',
+            'updatedAt' => 'DATETIME(3)', 'code' => 'VARCHAR(191)', 'slug' => 'VARCHAR(100)',
+        ], array_map(fn ($c) => $c->sqlType, $user->columns));
+        self::assertNull($user->primaryKeyName, 'MySQL primary keys are always called PRIMARY');
+        self::assertEquals(new SqlExpression('CURRENT_TIMESTAMP(3)'), $user->columns['createdAt']->default);
+        $join = $tables['_TagToUser'];
+        self::assertSame([], $join->primaryKey);
+        self::assertEquals([new Index(['A', 'B'], true, '_TagToUser_AB_unique', true), new Index(['B'], false, '_TagToUser_B_index', true)], $join->indexes);
+    }
+
+    public function testSqliteTables(): void
+    {
+        $tables = self::translate('sqlite', str_replace(' @db.VarChar(100)', '', self::BLOG));
+        self::assertSame([
+            'id' => 'INTEGER', 'email' => 'TEXT', 'name' => 'TEXT', 'score' => 'REAL', 'balance' => 'DECIMAL',
+            'active' => 'BOOLEAN', 'meta' => 'JSONB', 'avatar' => 'BLOB', 'big' => 'BIGINT', 'createdAt' => 'DATETIME',
+            'updatedAt' => 'DATETIME', 'code' => 'TEXT', 'slug' => 'TEXT',
+        ], array_map(fn ($c) => $c->sqlType, $tables['User']->columns));
+        self::assertEquals(new SqlExpression('CURRENT_TIMESTAMP'), $tables['User']->columns['createdAt']->default);
+    }
+
+    public function testEnumsAndRelationMode(): void
+    {
+        $models = "model U {\n  id Int @id\n  role Role @default(ADMIN)\n  roles Role[]\n  posts P[]\n}\n\nmodel P {\n  id Int @id\n  u U @relation(fields: [uId], references: [id])\n  uId Int\n}\n\nenum Role {\n  USER\n  ADMIN @map(\"admin\")\n  @@map(\"role_type\")\n}\n";
+        $schema = SchemaTranslator::translate(SchemaLoader::load("datasource db {\n  provider = \"postgresql\"\n  url = \"postgresql://x@y/z\"\n}\n\n$models"));
+        self::assertSame(['role_type' => ['USER', 'admin']], $schema->enums);
+        $role = $schema->tables['U']->columns['role'];
+        self::assertSame(['enum', 'role_type', ['USER', 'admin'], 'admin'], [$role->type, $role->enumName, $role->values, $role->default]);
+        self::assertTrue($schema->tables['U']->columns['roles']->array);
+
+        $mysql = self::translate('mysql', str_replace('  roles Role[]' . "\n", '', $models), "  relationMode = \"prisma\"\n");
+        self::assertNull($mysql['U']->columns['role']->enumName);
+        self::assertSame(['USER', 'admin'], $mysql['U']->columns['role']->values);
+        self::assertSame([], $mysql['P']->foreignKeys, 'relationMode = "prisma" creates no foreign keys');
+    }
+
+    public function testMappedNamesAndCompoundKeys(): void
+    {
+        $tables = self::translate('postgresql', <<<'PRISMA'
+            model Membership {
+              userId  Int    @map("user_id")
+              groupId Int    @map("group_id")
+              note    String @unique(map: "custom_note")
+
+              @@id([userId, groupId], map: "membership_pk")
+              @@unique([groupId, note])
+              @@map("memberships")
+            }
+            PRISMA);
+        $table = $tables['memberships'];
+        self::assertSame(['user_id', 'group_id'], $table->primaryKey);
+        self::assertSame('membership_pk', $table->primaryKeyName);
+        self::assertSame(['custom_note', 'memberships_group_id_note_key'], array_map(fn (Index $i) => $i->name, $table->indexes));
+    }
+}

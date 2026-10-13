@@ -1,0 +1,18 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use Nesto\Common\Attributes\Injectable;
+use Nesto\Common\Contracts\Guard;
+use Nesto\Core\ExecutionContext;
+
+#[Injectable]
+final class {{ class }} implements Guard
+{
+    public function canActivate(ExecutionContext $context): bool
+    {
+        return true;
+    }
+}

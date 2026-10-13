@@ -1,0 +1,27 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use Nesto\Common\Attributes\Catches;
+use Nesto\Common\Contracts\ExceptionFilter;
+use Nesto\Common\Exceptions\HttpException;
+use Nesto\Core\ArgumentsHost;
+use Nesto\Http\Response;
+use Psr\Http\Message\ResponseInterface;
+
+#[Catches(HttpException::class)]
+final class {{ class }} implements ExceptionFilter
+{
+    public function catch(\Throwable $exception, ArgumentsHost $host): ResponseInterface
+    {
+        $status = $exception instanceof HttpException ? $exception->getStatus() : 500;
+
+        return Response::json([
+            'statusCode' => $status,
+            'message' => $exception->getMessage(),
+            'path' => $host->switchToHttp()->getRequest()->path(),
+        ], $status);
+    }
+}

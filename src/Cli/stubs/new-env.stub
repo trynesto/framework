@@ -1,0 +1,12 @@
+APP_NAME={{ name }}
+APP_ENV=local
+APP_DEBUG=true
+APP_PORT=3000
+APP_URL=http://localhost:3000
+
+FILESYSTEM_DISK=local
+
+DB_CONNECTION=sqlite
+DB_DATABASE=database/database.sqlite
+
+JWT_SECRET=change-me

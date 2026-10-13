@@ -1,0 +1,16 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ testNamespace }};
+
+use {{ fqcn }};
+use Nesto\Testing\TestCase;
+
+final class {{ class }} extends TestCase
+{
+    public function testItIsDefined(): void
+    {
+        self::assertInstanceOf({{ subject }}::class, new {{ subject }}());
+    }
+}

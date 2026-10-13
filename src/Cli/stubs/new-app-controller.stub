@@ -1,0 +1,20 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\App;
+
+use Nesto\Common\Attributes\Controller;
+use Nesto\Common\Attributes\Get;
+
+#[Controller]
+final class AppController
+{
+    public function __construct(private readonly AppService $appService) {}
+
+    #[Get]
+    public function getHello(): string
+    {
+        return $this->appService->getHello();
+    }
+}

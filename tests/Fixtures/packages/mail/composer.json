@@ -1,0 +1,24 @@
+{
+    "name": "acme/mail",
+    "description": "Test fixture: a Nesto package with a MailModule with its own config file and console command.",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": ">=8.3",
+        "nesto/framework": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "Acme\\Mail\\": "src/"
+        }
+    },
+    "extra": {
+        "nesto": {
+            "module": "Acme\\Mail\\MailModule",
+            "commands": ["Acme\\Mail\\Commands\\MailTestCommand"],
+            "config": {
+                "mail": "config/mail.php"
+            }
+        }
+    }
+}

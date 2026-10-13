@@ -1,0 +1,55 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use Nesto\Common\Attributes\Body;
+use Nesto\Common\Attributes\Controller;
+use Nesto\Common\Attributes\Delete;
+use Nesto\Common\Attributes\Get;
+use Nesto\Common\Attributes\HttpCode;
+use Nesto\Common\Attributes\Param;
+use Nesto\Common\Attributes\Patch;
+use Nesto\Common\Attributes\Post;
+use {{ namespace }}\Dto\{{ createDto }};
+use {{ namespace }}\Dto\{{ updateDto }};
+use {{ namespace }}\Entities\{{ entity }}{{ entityAs }};
+
+#[Controller('{{ route }}')]
+final class {{ class }}
+{
+    public function __construct(private readonly {{ service }} ${{ serviceVar }}) {}
+
+    #[Post]
+    public function create(#[Body] {{ createDto }} $dto): {{ entityAlias }}
+    {
+        return $this->{{ serviceVar }}->create($dto);
+    }
+
+    /** @return list<{{ entityAlias }}> */
+    #[Get]
+    public function findAll(): array
+    {
+        return $this->{{ serviceVar }}->findAll();
+    }
+
+    #[Get('{id}')]
+    public function findOne(#[Param('id')] int $id): {{ entityAlias }}
+    {
+        return $this->{{ serviceVar }}->findOne($id);
+    }
+
+    #[Patch('{id}')]
+    public function update(#[Param('id')] int $id, #[Body] {{ updateDto }} $dto): {{ entityAlias }}
+    {
+        return $this->{{ serviceVar }}->update($id, $dto);
+    }
+
+    #[Delete('{id}')]
+    #[HttpCode(204)]
+    public function remove(#[Param('id')] int $id): void
+    {
+        $this->{{ serviceVar }}->remove($id);
+    }
+}

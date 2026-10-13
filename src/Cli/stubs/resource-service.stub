@@ -1,0 +1,61 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use Nesto\Common\Attributes\Injectable;
+use Nesto\Common\Exceptions\NotFoundException;
+use {{ namespace }}\Dto\{{ createDto }};
+use {{ namespace }}\Dto\{{ updateDto }};
+use {{ namespace }}\Entities\{{ entity }}{{ entityAs }};
+
+/**
+ * In-memory implementation. Re-generate with `php nesto g resource {{ kebab }} --orm` for a database-backed service.
+ */
+#[Injectable]
+final class {{ class }}
+{
+    /** @var array<int, {{ entityAlias }}> */
+    private array $items = [];
+    private int $nextId = 1;
+
+    public function create({{ createDto }} $dto): {{ entityAlias }}
+    {
+        $entity = new {{ entityAlias }}();
+        $entity->id = $this->nextId++;
+        $entity->name = $dto->name;
+        $this->items[$entity->id] = $entity;
+
+        return $entity;
+    }
+
+    /** @return list<{{ entityAlias }}> */
+    public function findAll(): array
+    {
+        return array_values($this->items);
+    }
+
+    public function findOne(int $id): {{ entityAlias }}
+    {
+        return $this->items[$id] ?? throw new NotFoundException("{{ entity }} #$id not found");
+    }
+
+    public function update(int $id, {{ updateDto }} $dto): {{ entityAlias }}
+    {
+        $entity = $this->findOne($id);
+        foreach (get_object_vars($dto) as $property => $value) {
+            if ($value !== null && property_exists($entity, $property)) {
+                $entity->{$property} = $value;
+            }
+        }
+
+        return $entity;
+    }
+
+    public function remove(int $id): void
+    {
+        $this->findOne($id);
+        unset($this->items[$id]);
+    }
+}

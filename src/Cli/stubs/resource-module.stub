@@ -1,0 +1,15 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use Nesto\Common\Attributes\Module;
+
+#[Module(
+    controllers: [{{ controller }}::class],
+    providers: [{{ service }}::class],
+)]
+final class {{ class }}
+{
+}
