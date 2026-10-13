@@ -101,7 +101,7 @@ final class Container implements ContainerInterface
 
     /** Tokens that only exist once a root module is imported; the generic hint would mislead. */
     private const ROOT_MODULE_HINTS = [
-        'Nesto\\Orm\\DataSource' => "The ORM has no connection: import the root module in AppModule, e.g. #[Module(imports: [new OrmModule(type: 'sqlite', database: 'database/app.sqlite', synchronize: true)])].",
+        'Nesto\\Orm\\DataSource' => "The ORM has no connection: import `new DatabaseModule()` in AppModule (it reads ORM_DRIVER=orm and DB_CONNECTION / DB_DATABASE… from .env and config/database.php), or the root module directly, e.g. #[Module(imports: [new OrmModule(type: 'sqlite', database: 'database/app.sqlite', synchronize: true)])].",
         'Nesto\\Config\\ConfigService' => 'Import the config module in AppModule: #[Module(imports: [new ConfigModule(isGlobal: true)])].',
     ];
 

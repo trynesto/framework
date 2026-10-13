@@ -46,7 +46,55 @@ final class GenerateCommand extends Command
 
             return self::FAILURE;
         }
+        if ($schematic === 'resource') {
+            foreach (self::databaseHints($context, (bool) $this->option('orm')) as $hint) {
+                $this->comment($hint);
+            }
+        }
 
         return self::SUCCESS;
+    }
+
+    /**
+     * What a generated resource still needs from the project: an ORM connection for --orm resources, or the Prisma
+     * flow when ORM_DRIVER=prisma.
+     *
+     * @return list<string>
+     */
+    public static function databaseHints(\Nesto\Cli\ProjectContext $context, bool $orm): array
+    {
+        $driver = strtolower(trim((string) (self::projectEnv($context, 'ORM_DRIVER') ?? 'orm')));
+        $rootFile = $context->rootModuleFile();
+        $root = $rootFile !== null && is_file($rootFile) ? (string) file_get_contents($rootFile) : '';
+        $hasDatabaseModule = str_contains($root, 'DatabaseModule');
+        $hasOrmRoot = preg_match('/new\s+OrmModule\s*\(|OrmModule::forRoot(Async)?\s*\(|\[\s*OrmModule::class\s*,\s*[\'"]forRoot/', $root) === 1;
+        $hints = [];
+        if ($orm) {
+            if (! $hasDatabaseModule && ! $hasOrmRoot) {
+                $hints[] = 'Hint: no ORM connection is configured yet. Add `new DatabaseModule()` (use Nesto\\Database\\DatabaseModule) to the imports of '
+                    . $context->rootModule() . ': it connects with DB_CONNECTION / DB_DATABASE… from .env (ORM_DRIVER=orm). Or import OrmModule::forRoot([...]) yourself.';
+            } elseif ($hasDatabaseModule && ! $hasOrmRoot && $driver !== 'orm') {
+                $hints[] = "Hint: ORM_DRIVER is \"$driver\" in .env, but this resource uses the ORM: set ORM_DRIVER=orm (or regenerate without --orm).";
+            }
+        } elseif ($driver === 'prisma') {
+            $hints[] = 'Hint: ORM_DRIVER=prisma: add the model to prisma/schema.prisma, run `php nesto prisma:generate`, then inject PrismaService in the service (`$this->prisma->cat->findMany()`).';
+        }
+
+        return $hints;
+    }
+
+    /** A variable of the real environment, else of the project's .env. */
+    private static function projectEnv(\Nesto\Cli\ProjectContext $context, string $key): ?string
+    {
+        $value = getenv($key);
+        if ($value !== false) {
+            return $value;
+        }
+        $file = $context->path('.env');
+        if (! is_file($file)) {
+            return null;
+        }
+
+        return \Nesto\Config\Env::parse((string) file_get_contents($file))[$key] ?? null;
     }
 }

@@ -65,11 +65,13 @@ final class ScheduleAppTest extends TestCase
 
     protected function setUp(): void
     {
+        \Nesto\Logger\Logger::toStream(fopen('php://memory', 'w+b')); // failed jobs are logged: keep the test output clean
         $this->storage = sys_get_temp_dir() . '/nesto-schedule-test-' . uniqid();
     }
 
     protected function tearDown(): void
     {
+        \Nesto\Logger\Logger::toStream(null);
         if (is_file($this->storage . '/state.json')) {
             unlink($this->storage . '/state.json');
         }

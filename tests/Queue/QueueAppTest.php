@@ -119,11 +119,13 @@ final class QueueAppTest extends TestCase
 
     protected function setUp(): void
     {
+        \Nesto\Logger\Logger::toStream(fopen('php://memory', 'w+b')); // failed jobs are logged: keep the test output clean
         $this->dir = sys_get_temp_dir() . '/nesto-queue-test-' . uniqid();
     }
 
     protected function tearDown(): void
     {
+        \Nesto\Logger\Logger::toStream(null);
         if (is_dir($this->dir)) {
             foreach (glob($this->dir . '/*/{.,}*', GLOB_BRACE) ?: [] as $f) {
                 if (is_file($f)) {

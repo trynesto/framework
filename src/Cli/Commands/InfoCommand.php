@@ -25,6 +25,9 @@ final class InfoCommand extends Command
         'Jwt' => \Nesto\Jwt\JwtService::class,
         'Auth' => \Nesto\Auth\AuthModule::class,
         'Cache' => \Nesto\Cache\CacheModule::class,
+        'Database' => \Nesto\Database\DatabaseModule::class,
+        'Logger' => \Nesto\Logger\LoggerModule::class,
+        'Prisma' => \Nesto\Prisma\PrismaModule::class,
         'Events' => \Nesto\Events\EventEmitter::class,
         'Queue' => \Nesto\Queue\Worker::class,
         'Schedule' => \Nesto\Schedule\Scheduler::class,
@@ -69,7 +72,42 @@ final class InfoCommand extends Command
             ['User commands', (string) count((array) $ctx->config('commands'))],
         ]);
 
+        $this->newLine();
+        $this->line($this->output->bold('Drivers') . ' (.env + config/*.php)');
+        $this->table(['Key', 'Value'], self::drivers());
+
         return self::SUCCESS;
+    }
+
+    /**
+     * The effective driver choices of the project in the current directory: ORM_DRIVER + connection, cache store,
+     * log channel. Paths::base() must point at the project (the console does that).
+     *
+     * @return list<array{0: string, 1: string}>
+     */
+    public static function drivers(): array
+    {
+        \Nesto\Config\ConfigFile::loadEnv();
+        $describe = static function (callable $fn): string {
+            try {
+                return (string) $fn();
+            } catch (\Throwable $e) {
+                return 'invalid: ' . $e->getMessage();
+            }
+        };
+
+        return [
+            ['Environment', (string) (env('APP_ENV') ?? 'local') . (env('APP_DEBUG') ? ' (debug)' : '')],
+            ['Database', $describe(fn () => \Nesto\Database\DatabaseConfig::describe(\Nesto\Database\DatabaseConfig::load()))],
+            ['Cache', $describe(fn () => \Nesto\Cache\CacheConfig::describe(\Nesto\Cache\CacheConfig::load()))],
+            ['Log', $describe(fn () => \Nesto\Logger\LogConfig::describe(\Nesto\Logger\LogConfig::load()))],
+            ['Logged HTTP errors', $describe(function () {
+                $config = \Nesto\Logger\LogConfig::load();
+                $value = strtolower((string) ($config['http_errors'] ?? '5xx'));
+
+                return $value . (\Nesto\Config\ConfigFile::bool($config['php_errors'] ?? true, true) ? ', PHP errors logged' : ', PHP errors not logged');
+            })],
+        ];
     }
 
     private function packageDirPresent(string $package): bool
