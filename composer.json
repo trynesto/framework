@@ -1,10 +1,9 @@
 {
     "name": "nesto/framework",
-    "description": "Nesto — a PHP 8.3 framework: modules, dependency injection, guards, pipes, interceptors, filters, validation, an ORM and a Prisma-style client, OpenAPI, queues, scheduling and a CLI, all with attributes.",
+    "description": "Nesto — a PHP framework: modules, dependency injection, guards, pipes, interceptors, filters, validation, an ORM and a Prisma-style client, OpenAPI, queues, scheduling and a CLI, all with attributes.",
     "type": "library",
     "keywords": [
-        "nestjs",
-        "nest",
+        "nesto",
         "framework",
         "php",
         "api",
