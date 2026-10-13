@@ -22,6 +22,11 @@ final class EnvDatabaseModule
 {
 }
 
+#[Module(imports: [new \Nesto\Cache\CacheModule(), new DatabaseModule()])]
+final class CachedDatabaseModule
+{
+}
+
 /** ORM_DRIVER / DB_* / DATABASE_URL through DatabaseModule and config/database.php. */
 final class DatabaseModuleTest extends TestCase
 {
@@ -110,6 +115,16 @@ final class DatabaseModuleTest extends TestCase
         rewind($stream);
         self::assertStringContainsString('ERROR [Orm]', (string) stream_get_contents($stream));
         self::assertStringContainsString('no_such_table', (string) stream_get_contents($stream, offset: 0));
+    }
+
+    public function testOrmQueryCacheReusesTheCacheModuleStore(): void
+    {
+        $this->project(['DB_DATABASE' => ':memory:', 'DB_CACHE' => 'cache', 'CACHE_DRIVER' => 'memory']);
+        $app = NestoFactory::createApplicationContext(CachedDatabaseModule::class);
+        $cache = $app->get(DataSource::class)->queryResultCache;
+
+        self::assertInstanceOf(\Nesto\Orm\Cache\Psr16QueryResultCache::class, $cache);
+        self::assertSame($app->get(\Psr\SimpleCache\CacheInterface::class), $cache->store());
     }
 
     public function testNoneImportsNothing(): void

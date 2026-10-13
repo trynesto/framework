@@ -20,6 +20,19 @@ php -S 127.0.0.1:3000 -t public public/index.php
 
 Then open http://127.0.0.1:3000/api — you should see `Hello World!`.
 
+## Configure
+
+Everything is driven by `.env` (each key is documented there) and `config/*.php`:
+
+| Key | Values |
+| --- | --- |
+| `ORM_DRIVER` | `orm` (entities + repositories), `prisma` (prisma/schema.prisma), `none` |
+| `DB_CONNECTION`, `DB_DATABASE`, `DB_HOST`… | the database (`sqlite`, `mysql`, `mariadb`, `pgsql`) |
+| `CACHE_DRIVER` | `memory`, `file`, `database`, `redis` (`REDIS_HOST`, `REDIS_PORT`…) |
+| `LOG_CHANNEL`, `LOG_PATH`, `LOG_LEVEL`, `LOG_DAILY` | where errors and logs go (default `storage/logs/nesto.log` + stderr) |
+
+`php nesto info` shows what is in effect; `php nesto cache:clear` empties the cache.
+
 ## Test
 
 ```bash
