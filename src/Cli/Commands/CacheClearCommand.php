@@ -8,6 +8,7 @@ use Nesto\Cache\CacheConfig;
 use Nesto\Cache\CacheModule;
 use Nesto\Cache\Stores\DatabaseStore;
 use Nesto\Cache\Stores\FileStore;
+use Nesto\Cli\CliException;
 use Nesto\Cli\Command;
 use Psr\SimpleCache\CacheInterface;
 
@@ -32,7 +33,11 @@ final class CacheClearCommand extends Command
         $cache = $name === null ? $this->applicationCache() : null;
         $label = 'application cache';
         if ($cache === null) {
-            $options = CacheConfig::options(CacheConfig::load(), $name !== null ? (string) $name : null);
+            try {
+                $options = CacheConfig::options(CacheConfig::load(), $name !== null ? (string) $name : null);
+            } catch (\InvalidArgumentException $e) {
+                throw new CliException($e->getMessage());
+            }
             $cache = CacheModule::createStore($options);
             $label = '"' . $options['name'] . '" cache store';
         }

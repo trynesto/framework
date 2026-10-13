@@ -66,7 +66,7 @@ final class GenerateCommand extends Command
         $driver = strtolower(trim((string) (self::projectEnv($context, 'ORM_DRIVER') ?? 'orm')));
         $rootFile = $context->rootModuleFile();
         $root = $rootFile !== null && is_file($rootFile) ? (string) file_get_contents($rootFile) : '';
-        $hasDatabaseModule = str_contains($root, 'DatabaseModule');
+        $hasDatabaseModule = preg_match('/new\s+DatabaseModule\s*\(|DatabaseModule::forRoot\s*\(|\[\s*DatabaseModule::class\s*,|DatabaseModule::class/', $root) === 1;
         $hasOrmRoot = preg_match('/new\s+OrmModule\s*\(|OrmModule::forRoot(Async)?\s*\(|\[\s*OrmModule::class\s*,\s*[\'"]forRoot/', $root) === 1;
         $hints = [];
         if ($orm) {
