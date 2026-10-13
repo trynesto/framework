@@ -43,6 +43,9 @@ php nesto start
 Open http://127.0.0.1:3000/api and you get `Hello World!`. Make sure Composer's global bin directory
 (`composer global config bin-dir --absolute`) is on your `PATH`.
 
+If Composer reports a conflict with another global tool (for example `psr/http-message` locked to an older version),
+let it adjust the shared dependencies: `composer global require nesto/framework -W`.
+
 A controller, a service and a module look like this:
 
 ```php
