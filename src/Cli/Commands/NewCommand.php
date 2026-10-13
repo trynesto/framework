@@ -92,8 +92,9 @@ final class NewCommand extends Command
     }
 
     /** The Composer constraint new projects use for nesto/framework: ^0.MINOR before 1.0, ^MAJOR.MINOR after. */
-    public static function frameworkConstraint(string $version = Application::VERSION): string
+    public static function frameworkConstraint(?string $version = null): string
     {
+        $version ??= Application::frameworkVersion();
         if (! preg_match('/^v?(\d+)\.(\d+)/', $version, $m)) {
             return '^0.1';
         }

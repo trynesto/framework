@@ -32,7 +32,7 @@ final class Console
         if ($context !== null) {
             \Nesto\Core\Paths::setBase($context->rootDir());
         }
-        $app = new Application($name, Application::VERSION);
+        $app = new Application($name, Application::frameworkVersion());
         $app->setContext($context);
         $app->add(...BuiltIn::commands());
 

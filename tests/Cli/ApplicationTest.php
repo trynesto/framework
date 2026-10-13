@@ -144,4 +144,10 @@ final class ApplicationTest extends TestCase
         $this->app->run(['helo']);
         self::assertStringContainsString('Did you mean "hello"?', $this->out->fetch());
     }
+
+    public function testTheFrameworkVersionIsASemanticVersion(): void
+    {
+        self::assertMatchesRegularExpression('/^\d+\.\d+\.\d+$/', \Nesto\Cli\Application::frameworkVersion());
+        self::assertSame('^0.1', \Nesto\Cli\Commands\NewCommand::frameworkConstraint('v0.1.2'));
+    }
 }

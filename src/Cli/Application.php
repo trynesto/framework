@@ -17,7 +17,21 @@ namespace Nesto\Cli;
  */
 final class Application
 {
-    public const VERSION = '0.1.0';
+    /** Fallback when Composer can't tell (a git checkout without a tag); releases read the installed version. */
+    public const VERSION = '0.1.3';
+
+    /** The installed nesto/framework version ("0.1.2"), from Composer's metadata when available. */
+    public static function frameworkVersion(): string
+    {
+        if (class_exists(\Composer\InstalledVersions::class) && \Composer\InstalledVersions::isInstalled('nesto/framework')) {
+            $version = \Composer\InstalledVersions::getPrettyVersion('nesto/framework');
+            if ($version !== null && preg_match('/^v?(\d+\.\d+\.\d+)$/', $version, $m) === 1) {
+                return $m[1];
+            }
+        }
+
+        return self::VERSION;
+    }
 
     /** @var array<string, Command> name => command */
     private array $commands = [];

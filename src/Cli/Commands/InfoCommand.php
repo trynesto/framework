@@ -37,7 +37,7 @@ final class InfoCommand extends Command
         $this->line($this->output->bold('System'));
         $this->table(['Key', 'Value'], [
             ['PHP', PHP_VERSION . ' (' . PHP_SAPI . ')'],
-            ['Nesto', Application::VERSION],
+            ['Nesto', Application::frameworkVersion()],
             ['OS', php_uname('s') . ' ' . php_uname('r') . ' ' . php_uname('m')],
             ['Framework path', realpath(dirname(__DIR__, 3)) ?: dirname(__DIR__, 3)],
         ]);
