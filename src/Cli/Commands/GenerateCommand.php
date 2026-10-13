@@ -47,7 +47,7 @@ final class GenerateCommand extends Command
             return self::FAILURE;
         }
         if ($schematic === 'resource') {
-            foreach (self::databaseHints($context, (bool) $this->option('orm')) as $hint) {
+            foreach (self::databaseHints($context, (bool) $this->option('orm'), (string) $this->argument('name')) as $hint) {
                 $this->comment($hint);
             }
         }
@@ -61,7 +61,7 @@ final class GenerateCommand extends Command
      *
      * @return list<string>
      */
-    public static function databaseHints(\Nesto\Cli\ProjectContext $context, bool $orm): array
+    public static function databaseHints(\Nesto\Cli\ProjectContext $context, bool $orm, string $name = 'cats'): array
     {
         $driver = strtolower(trim((string) (self::projectEnv($context, 'ORM_DRIVER') ?? 'orm')));
         $rootFile = $context->rootModuleFile();
@@ -77,7 +77,9 @@ final class GenerateCommand extends Command
                 $hints[] = "Hint: ORM_DRIVER is \"$driver\" in .env, but this resource uses the ORM: set ORM_DRIVER=orm (or regenerate without --orm).";
             }
         } elseif ($driver === 'prisma') {
-            $hints[] = 'Hint: ORM_DRIVER=prisma: add the model to prisma/schema.prisma, run `php nesto prisma:generate`, then inject PrismaService in the service (`$this->prisma->cat->findMany()`).';
+            $model = \Nesto\Cli\Generator\Str::singular(\Nesto\Cli\Generator\Str::pascal(basename(str_replace('\\', '/', $name))));
+            $hints[] = "Hint: ORM_DRIVER=prisma: the generated service keeps its data in memory. Add `model $model { ... }` to prisma/schema.prisma, run "
+                . '`php nesto prisma:db push` (or prisma:migrate dev) and `php nesto prisma:generate`, then inject PrismaService in the service ($this->prisma->' . lcfirst($model) . '->findMany()).';
         }
 
         return $hints;

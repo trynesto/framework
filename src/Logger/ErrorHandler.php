@@ -119,7 +119,9 @@ final class ErrorHandler
         }
         $display = strtolower((string) ini_get('display_errors'));
         if (in_array($display, ['1', 'on', 'true', 'yes', 'stdout', 'stderr'], true)) {
-            $out = PHP_SAPI === 'cli' ? "PHP Fatal error:  $text\n" : "<br />\n<b>Fatal error</b>:  " . htmlspecialchars($text) . "<br />\n";
+            $out = ini_get('html_errors') && PHP_SAPI !== 'cli'
+                ? "<br />\n<b>Fatal error</b>:  " . htmlspecialchars($text) . "<br />\n"
+                : "PHP Fatal error:  $text\n";
             if ($display === 'stderr' && defined('STDERR')) {
                 fwrite(STDERR, $out);
             } else {

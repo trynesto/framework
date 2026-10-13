@@ -1,12 +1,97 @@
+# -----------------------------------------------------------------------------
+# Application
+# -----------------------------------------------------------------------------
+# Name of the application (also the default cache key prefix).
 APP_NAME={{ name }}
+# local | production | testing. production lowers LOG_LEVEL to info and warns about DB_SYNCHRONIZE.
 APP_ENV=local
+# true: 500 responses include the exception message and trace. Never true in production.
 APP_DEBUG=true
+# Port of `php nesto start`.
 APP_PORT=3000
+# Public URL of the application (URLs of public files).
 APP_URL=http://localhost:3000
 
+# -----------------------------------------------------------------------------
+# Database (config/database.php, loaded by DatabaseModule)
+# -----------------------------------------------------------------------------
+# orm = the built-in ORM (entities + repositories) | prisma = PrismaModule (prisma/schema.prisma) | none
+ORM_DRIVER=orm
+# sqlite | mysql | mariadb | pgsql
+DB_CONNECTION=sqlite
+# SQLite: a path relative to the project root (created on first use). Servers: the database name.
+DB_DATABASE=database/database.sqlite
+# Server connections (mysql, mariadb, pgsql):
+# DB_HOST=127.0.0.1
+# DB_PORT=3306
+# DB_USERNAME=root
+# DB_PASSWORD=
+# Or one URL instead of the keys above, e.g. pgsql://user:secret@127.0.0.1:5432/app
+# DB_URL=
+# true: align the tables with the entities on every boot (development only; use migrations in production).
+DB_SYNCHRONIZE=true
+# false = failed queries only | true = every query | all | none | query,error,schema,migration (to the log)
+DB_LOGGING=false
+# ORM query result cache: false | database | cache (the CACHE_DRIVER store)
+DB_CACHE=false
+# true: run pending migrations when the application boots.
+DB_MIGRATIONS_RUN=false
+# Prisma's datasource URL (ORM_DRIVER=prisma). SQLite paths are relative to prisma/.
+DATABASE_URL="file:../database/database.sqlite"
+
+# -----------------------------------------------------------------------------
+# Cache (config/cache.php, loaded by CacheModule)
+# -----------------------------------------------------------------------------
+# memory | file | database | redis
+CACHE_DRIVER=file
+# Default TTL in seconds (0 = forever).
+CACHE_TTL=3600
+# Key prefix of the redis and database stores (default: <app name>_cache_).
+# CACHE_PREFIX=
+# Directory of the file store.
+CACHE_PATH=storage/framework/cache
+# Table of the database store (created on first use).
+# CACHE_TABLE=cache
+
+# -----------------------------------------------------------------------------
+# Redis (CACHE_DRIVER=redis; phpredis extension, or composer require predis/predis)
+# -----------------------------------------------------------------------------
+REDIS_HOST=127.0.0.1
+REDIS_PORT=6379
+REDIS_PASSWORD=
+REDIS_DB=0
+# Or one URL: redis://:password@127.0.0.1:6379/0 (rediss:// for TLS)
+# REDIS_URL=
+# auto | phpredis | predis
+# REDIS_CLIENT=auto
+
+# -----------------------------------------------------------------------------
+# Logging (config/logging.php, loaded by LoggerModule and `php nesto`)
+# -----------------------------------------------------------------------------
+# file | stderr | stdout | stack | null. In containers: stderr.
+LOG_CHANNEL=stack
+# Channels of the stack.
+LOG_STACK=file,stderr
+# Log file of the file channel (relative to the project root).
+LOG_PATH=storage/logs/nesto.log
+# debug | info | notice | warning | error | critical | alert | emergency
+LOG_LEVEL=debug
+# true: one file per day (nesto-YYYY-MM-DD.log), keeping LOG_MAX_FILES of them.
+LOG_DAILY=false
+LOG_MAX_FILES=14
+# HTTP errors that are logged: 5xx | 4xx (client errors too) | all | none
+LOG_HTTP_ERRORS=5xx
+# false: do not log PHP warnings, notices, deprecations and fatal errors.
+LOG_PHP_ERRORS=true
+
+# -----------------------------------------------------------------------------
+# Files (config/filesystems.php)
+# -----------------------------------------------------------------------------
+# local | public | s3
 FILESYSTEM_DISK=local
 
-DB_CONNECTION=sqlite
-DB_DATABASE=database/database.sqlite
-
+# -----------------------------------------------------------------------------
+# Auth
+# -----------------------------------------------------------------------------
+# Secret that signs JWTs (`nesto new` generates one in .env).
 JWT_SECRET=change-me

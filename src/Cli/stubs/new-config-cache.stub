@@ -1,0 +1,53 @@
+<?php
+
+declare(strict_types=1);
+
+/*
+ * The cache, read by CacheModule (imported in src/AppModule.php): inject Psr\SimpleCache\CacheInterface,
+ * or cache GET routes with CacheInterceptor. Pick the store with CACHE_DRIVER in .env.
+ */
+
+return [
+    // memory | file | database | redis (CACHE_STORE is accepted too)
+    'default' => env('CACHE_DRIVER', env('CACHE_STORE', 'file')),
+
+    // Seconds an entry lives when set() gets no TTL (and for cached routes); 0 = forever.
+    'ttl' => env('CACHE_TTL', 3600),
+
+    // Prefix of every key in the shared stores (redis, database), so several apps can share one server.
+    'prefix' => env('CACHE_PREFIX') ?: preg_replace('/[^a-z0-9]+/', '_', strtolower((string) env('APP_NAME', 'nesto'))) . '_cache_',
+
+    'stores' => [
+        // per process: gone after the request (php-fpm) or kept by the worker (FrankenPHP)
+        'memory' => [
+            'driver' => 'memory',
+            'max' => null, // entries kept at most (oldest evicted)
+        ],
+
+        'file' => [
+            'driver' => 'file',
+            'path' => env('CACHE_PATH', storage_path('framework/cache')),
+        ],
+
+        // A "cache" table (key, value, expiration) on the application's database connection,
+        // created on first use. "connection": another connection of config/database.php.
+        'database' => [
+            'driver' => 'database',
+            'table' => env('CACHE_TABLE', 'cache'),
+            'connection' => env('CACHE_DB_CONNECTION'),
+        ],
+
+        // phpredis extension when loaded, else predis/predis (composer require predis/predis)
+        'redis' => [
+            'driver' => 'redis',
+            'url' => env('REDIS_URL'),
+            'host' => env('REDIS_HOST', '127.0.0.1'),
+            'port' => env('REDIS_PORT', 6379),
+            'username' => env('REDIS_USERNAME'),
+            'password' => env('REDIS_PASSWORD'),
+            'database' => env('REDIS_DB', 0),
+            'client' => env('REDIS_CLIENT', 'auto'), // auto | phpredis | predis
+            'timeout' => 2.0,
+        ],
+    ],
+];

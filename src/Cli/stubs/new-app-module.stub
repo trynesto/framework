@@ -6,12 +6,23 @@ namespace App;
 
 use App\App\AppController;
 use App\App\AppService;
+use Nesto\Cache\CacheModule;
 use Nesto\Common\Attributes\Module;
 use Nesto\Config\ConfigModule;
+use Nesto\Database\DatabaseModule;
+use Nesto\Logger\LoggerModule;
 
 #[Module(
-    // .env + config/*.php (and the config of packages installed with `php nesto add`), injectable everywhere
-    imports: [new ConfigModule(isGlobal: true)],
+    imports: [
+        // .env + config/*.php (and the config of packages installed with `php nesto add`), injectable everywhere
+        new ConfigModule(isGlobal: true),
+        // LOG_CHANNEL / LOG_PATH / LOG_LEVEL (config/logging.php): where every error ends up
+        new LoggerModule(),
+        // ORM_DRIVER=orm|prisma|none + DB_* (config/database.php)
+        new DatabaseModule(),
+        // CACHE_DRIVER=memory|file|database|redis (config/cache.php)
+        new CacheModule(),
+    ],
     controllers: [AppController::class],
     providers: [AppService::class],
 )]

@@ -43,7 +43,7 @@ class BaseExceptionFilter implements ExceptionFilter
                     default => LogLevel::WARNING,
                 };
                 $request = $host->switchToHttp()->getRequest();
-                $where = $request->getMethod() . ' ' . $request->path() . ' ';
+                $where = $request->method() . ' ' . $request->path() . ' ';
                 ($this->logger ?? new Logger('ExceptionsHandler'))->log(
                     $level,
                     $where . $status . ' ' . $exception->getMessage(),
