@@ -6,6 +6,7 @@ namespace Nesto\Core;
 
 use Nesto\Common\DynamicModule;
 use Nesto\Core\Platform\BootErrorHandler;
+use Nesto\Logger\ErrorHandler;
 
 /**
  *   $app = NestoFactory::create(AppModule::class, ['debug' => true]);
@@ -26,6 +27,9 @@ final class NestoFactory
         Paths::detectFromModule($rootModule); // before scanning: ConfigModule reads .env relative to the project
         $container = new Container;
         $root = (new ModuleScanner($container))->scan($rootModule);
+        // PHP warnings, uncaught exceptions and fatal errors go to the configured log too (LOG_PHP_ERRORS; after the
+        // scan, so .env and LoggerModule's channel are in place)
+        ErrorHandler::register();
 
         return new NestoApplication($container, $root, new Reflector, $options);
     }

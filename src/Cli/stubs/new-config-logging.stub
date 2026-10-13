@@ -1,0 +1,43 @@
+<?php
+
+declare(strict_types=1);
+
+/*
+ * Logging, read by LoggerModule (imported in src/AppModule.php) and by `php nesto`. Every error the framework
+ * catches lands here: 500s and boot errors, HTTP 4xx (LOG_HTTP_ERRORS), failed commands, queue jobs and
+ * scheduled jobs, failed queries, PHP warnings / notices / deprecations, uncaught exceptions and fatal errors.
+ */
+
+return [
+    // file | stderr | stdout | stack | console (errors on stderr, the rest on stdout) | null
+    'default' => env('LOG_CHANNEL', 'stack'),
+
+    // PSR-3 threshold: debug | info | notice | warning | error | critical | alert | emergency
+    'level' => env('LOG_LEVEL', in_array(env('APP_ENV', 'local'), ['local', 'development', 'testing'], true) ? 'debug' : 'info'),
+
+    // HTTP errors written by the exception filter: 5xx | 4xx (client errors too) | all | none
+    'http_errors' => env('LOG_HTTP_ERRORS', '5xx'),
+
+    // PHP warnings, notices, deprecations, uncaught exceptions and fatal errors (respects error_reporting)
+    'php_errors' => env('LOG_PHP_ERRORS', true),
+
+    'channels' => [
+        'stack' => [
+            'driver' => 'stack',
+            'channels' => env('LOG_STACK', 'file,stderr'),
+        ],
+
+        'file' => [
+            'driver' => 'file',
+            'path' => env('LOG_PATH', storage_path('logs/nesto.log')),
+            // one file per day: nesto-2026-10-13.log, the oldest deleted beyond max_files (0 = keep all)
+            'daily' => env('LOG_DAILY', false),
+            'max_files' => env('LOG_MAX_FILES', 14),
+        ],
+
+        'stderr' => ['driver' => 'stderr'],
+        'stdout' => ['driver' => 'stdout'],
+        'console' => ['driver' => 'console'],
+        'null' => ['driver' => 'null'],
+    ],
+];

@@ -198,7 +198,7 @@ final class Scheduler
             unset($this->errors[$name]);
         } catch (\Throwable $e) {
             $this->errors[$name] = $e;
-            $this->logger?->error("Scheduled $type \"$name\" failed: {$e->getMessage()}", ['exception' => $e, 'context' => 'Scheduler']);
+            ($this->logger ?? new \Nesto\Logger\Logger('Scheduler'))->error("Scheduled $type \"$name\" failed: {$e->getMessage()}", ['exception' => $e, 'context' => 'Scheduler']);
         }
     }
 }

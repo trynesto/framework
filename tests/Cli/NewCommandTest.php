@@ -129,6 +129,96 @@ final class NewCommandTest extends TestCase
         self::assertSame([200, 'Hello World!', 'public', true], json_decode($output, true), $output);
     }
 
+    public function testDriversComeFromEnvAndConfigFiles(): void
+    {
+        $out = Output::memory();
+        $app = (new Application())->setOutput($out)->add(...BuiltIn::commands());
+        $target = $this->dir . '/envdriven';
+        self::assertSame(0, $app->run(['new', $target, '--skip-install']));
+
+        foreach (['config/database.php', 'config/cache.php', 'config/logging.php'] as $file) {
+            self::assertFileExists("$target/$file");
+            GeneratorTest::assertLints("$target/$file");
+        }
+        $module = (string) file_get_contents("$target/src/AppModule.php");
+        foreach (['new ConfigModule(isGlobal: true)', 'new LoggerModule()', 'new DatabaseModule()', 'new CacheModule()'] as $import) {
+            self::assertStringContainsString($import, $module);
+        }
+        $env = (string) file_get_contents("$target/.env.example");
+        foreach (['ORM_DRIVER=orm', 'DB_CONNECTION=sqlite', 'DATABASE_URL=', 'CACHE_DRIVER=file', 'CACHE_TTL=', 'REDIS_HOST=', 'LOG_CHANNEL=stack', 'LOG_PATH=', 'LOG_LEVEL=', 'LOG_DAILY=', 'LOG_HTTP_ERRORS='] as $key) {
+            self::assertStringContainsString($key, $env);
+        }
+        // every key is documented: each assignment follows a comment line
+        $lines = explode("\n", $env);
+        foreach ($lines as $i => $line) {
+            if (preg_match('/^[A-Z_]+=/', $line) === 1) {
+                $before = $i;
+                while ($before > 0 && preg_match('/^[A-Z_]+=/', $lines[$before - 1]) === 1) {
+                    $before--;
+                }
+                self::assertTrue($before > 0 && str_starts_with($lines[$before - 1], '#'), "$line is not documented");
+            }
+        }
+    }
+
+    /**
+     * nesto new → php nesto g resource cats --orm → php nesto routes → POST/GET /api/cats, with no manual edit:
+     * DatabaseModule connects to the SQLite database of .env and synchronizes the generated entity.
+     */
+    public function testOrmResourceWorksOutOfTheBox(): void
+    {
+        $out = Output::memory();
+        $app = (new Application())->setOutput($out)->add(...BuiltIn::commands());
+        $target = $this->dir . '/shop';
+        self::assertSame(0, $app->run(['new', $target, '--skip-install']));
+        mkdir("$target/vendor");
+        file_put_contents("$target/vendor/autoload.php", "<?php\nrequire " . var_export(dirname(__DIR__, 2) . '/vendor/autoload.php', true) . ";\n" . <<<'PHP'
+            spl_autoload_register(static function (string $class): void {
+                $file = dirname(__DIR__) . '/src/' . str_replace('\\', '/', substr($class, 4)) . '.php';
+                if (str_starts_with($class, 'App\\') && is_file($file)) {
+                    require $file;
+                }
+            }, prepend: true);
+            PHP);
+        $run = function (string $command) use ($target): string {
+            exec(sprintf('cd %s && %s %s 2>&1', escapeshellarg($target), escapeshellarg(PHP_BINARY), $command), $lines, $code);
+            self::assertSame(0, $code, $command . "\n" . implode("\n", $lines));
+
+            return implode("\n", $lines);
+        };
+
+        $generated = $run('nesto g resource cats --orm --no-ansi');
+        self::assertStringNotContainsString('Hint:', $generated, 'DatabaseModule is already there');
+        self::assertStringContainsString('POST   | /api/cats', $run('nesto routes --no-ansi'));
+        $info = $run('nesto info --no-ansi');
+        self::assertStringContainsString('orm, connection sqlite (sqlite database/database.sqlite)', $info);
+        self::assertStringContainsString('file (storage/framework/cache), ttl 3600s, prefix shop_cache_', $info);
+        self::assertStringContainsString('stack (file storage/logs/nesto.log, stderr), level debug', $info);
+
+        file_put_contents("$target/http.php", <<<'PHP'
+            <?php
+            require __DIR__ . '/vendor/autoload.php';
+            $app = Nesto\Core\NestoFactory::create(App\AppModule::class);
+            $app->setGlobalPrefix('api');
+            $app->useGlobalPipes(new Nesto\Validation\ValidationPipe(whitelist: true, transform: true));
+            $created = $app->handle(Nesto\Http\Request::create('POST', '/api/cats', body: ['name' => 'Tom']));
+            $list = $app->handle(Nesto\Http\Request::create('GET', '/api/cats'));
+            $cache = $app->get(Psr\SimpleCache\CacheInterface::class);
+            echo json_encode([$created->getStatusCode(), json_decode((string) $created->getBody(), true), json_decode((string) $list->getBody(), true), $cache::class]);
+            PHP);
+        $result = json_decode($run('http.php'), true);
+        self::assertSame([201, ['id' => 1, 'name' => 'Tom'], [['id' => 1, 'name' => 'Tom']], 'Nesto\\Cache\\Stores\\FileStore'], $result);
+        self::assertFileExists("$target/database/database.sqlite");
+
+        // a project without DatabaseModule gets a hint from `g resource --orm`
+        file_put_contents("$target/src/AppModule.php", str_replace('new DatabaseModule(),', '', (string) file_get_contents("$target/src/AppModule.php")));
+        self::assertStringContainsString('Hint: no ORM connection is configured yet. Add `new DatabaseModule()`', $run('nesto g resource dogs --orm --no-ansi'));
+        // ORM_DRIVER=prisma: a plain resource points at the Prisma flow
+        file_put_contents("$target/.env", str_replace('ORM_DRIVER=orm', 'ORM_DRIVER=prisma', (string) file_get_contents("$target/.env")));
+        self::assertStringContainsString('Hint: ORM_DRIVER=prisma', $run('nesto g resource birds --no-ansi'));
+        self::assertStringContainsString('prisma (file:../database/database.sqlite)', $run('nesto info --no-ansi'));
+    }
+
     public function testFrameworkConstraintFollowsTheFrameworkVersion(): void
     {
         self::assertSame('^0.1', NewCommand::frameworkConstraint('0.1.0'));

@@ -23,8 +23,25 @@ final class Console
     public static function run(string $projectRoot, array $argv): int
     {
         $name = 'php ' . basename($argv[0] ?? 'nesto');
+        $application = self::application(ProjectContext::fromDir($projectRoot), $name);
+        self::configureLogging();
 
-        return self::application(ProjectContext::fromDir($projectRoot), $name)->run(array_slice($argv, 1));
+        return $application->run(array_slice($argv, 1));
+    }
+
+    /**
+     * The project's .env and config/logging.php decide where command failures, queue / schedule failures and PHP
+     * errors are logged (commands booting the app apply LoggerModule's configuration again, the same one).
+     */
+    public static function configureLogging(): void
+    {
+        try {
+            \Nesto\Config\ConfigFile::loadEnv();
+            \Nesto\Logger\LogConfig::apply(\Nesto\Logger\LogConfig::load());
+        } catch (\Throwable $e) {
+            fwrite(STDERR, 'Warning: logging configuration ignored: ' . $e->getMessage() . "\n");
+        }
+        \Nesto\Logger\ErrorHandler::register();
     }
 
     public static function application(?ProjectContext $context, string $name = 'php nesto'): Application

@@ -29,7 +29,8 @@ use Nesto\Throttler\Storage\MemoryStorage;
  *       'inject' => [ConfigService::class],
  *   ]);
  *
- * `storage`: null|'memory' → MemoryStorage, 'file' or 'file:/dir' → FileStorage, a class name resolved
+ * `storage`: null|'memory' → MemoryStorage, 'file' or 'file:/dir' → FileStorage, 'cache' → the CacheModule store
+ * (Redis, database… from CACHE_DRIVER, shared by every server), a class name resolved
  * through the container, or a ThrottlerStorage instance (forRoot only).
  */
 final class ThrottlerModule implements DynamicModuleFactory
@@ -112,6 +113,14 @@ final class ThrottlerModule implements DynamicModuleFactory
         }
         if ($storage === 'file') {
             return new FileStorage;
+        }
+        if ($storage === 'cache') {
+            // the application's PSR-16 store (CacheModule: CACHE_DRIVER=redis / database / file…)
+            if ($container === null || ! interface_exists(\Psr\SimpleCache\CacheInterface::class) || ! $container->has(\Psr\SimpleCache\CacheInterface::class)) {
+                throw new \InvalidArgumentException('ThrottlerModule: storage "cache" needs CacheModule (Psr\\SimpleCache\\CacheInterface) in the application.');
+            }
+
+            return new Storage\Psr16Storage($container->get(\Psr\SimpleCache\CacheInterface::class));
         }
         if (str_starts_with($storage, 'file:')) {
             return new FileStorage(substr($storage, 5));

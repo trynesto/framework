@@ -245,6 +245,10 @@ final class Application
             if (! $this->catchExceptions) {
                 throw $e;
             }
+            if (! $e instanceof CliException) {
+                // a command crashed: the trace goes to the configured log (LOG_CHANNEL), the console gets the message
+                (new \Nesto\Logger\Logger('Console'))->error(sprintf('Command "%s" failed: %s', $name, $e->getMessage()), ['exception' => $e]);
+            }
             $this->output->error(($e instanceof CliException ? '' : get_class($e) . ': ') . $e->getMessage());
             if (isset($command) && $e instanceof CliException) {
                 $this->output->comment('Usage: ' . $command->signature()->synopsis());

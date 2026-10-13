@@ -28,7 +28,7 @@ final class JobRunner
             $job->failedReason = "No processor registered for job \"{$job->name}\" on queue \"{$job->queue}\".";
             $job->finishedOn = microtime(true);
             $driver->fail($job);
-            $this->logger?->warning($job->failedReason, ['context' => 'Queue']);
+            $this->failureLogger()->warning($job->failedReason, ['context' => 'Queue']);
 
             return false;
         }
@@ -66,10 +66,16 @@ final class JobRunner
             $job->finishedOn = microtime(true);
             $driver->fail($job);
         }
-        $this->logger?->error("Job \"{$job->name}\" ({$job->id}) on queue \"{$job->queue}\" failed: {$e->getMessage()}", ['exception' => $e, 'context' => 'Queue']);
+        $this->failureLogger()->error("Job \"{$job->name}\" ({$job->id}) on queue \"{$job->queue}\" failed: {$e->getMessage()}", ['exception' => $e, 'context' => 'Queue']);
         $this->registry->emit($job->queue, 'failed', $job, $e);
 
         return false;
+    }
+
+    /** Failures always reach a log: the injected PSR-3 logger, else the framework Logger (LOG_CHANNEL). */
+    private function failureLogger(): LoggerInterface
+    {
+        return $this->logger ?? new \Nesto\Logger\Logger('Queue');
     }
 
     /** Delay in ms before the next attempt from opts['backoff'] (int = fixed, or ['type' => 'exponential', 'delay' => ms]). */

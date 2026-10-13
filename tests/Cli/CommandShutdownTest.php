@@ -99,10 +99,16 @@ final class CommandShutdownTest extends TestCase
 
     protected function setUp(): void
     {
+        \Nesto\Logger\Logger::toStream(fopen('php://memory', 'w+b')); // a failing command is logged
         HookedService::$log = [];
         $this->context = new ProjectContext(sys_get_temp_dir(), ['rootModule' => HookedModule::class]);
         $this->app = (new Application())->setOutput(Output::memory())->setContext($this->context)
             ->add(new UsesAppCommand(), new FailsCommand(), new CallsOtherCommand(), new NoAppCommand());
+    }
+
+    protected function tearDown(): void
+    {
+        \Nesto\Logger\Logger::toStream(null);
     }
 
     public function test_the_app_is_closed_after_the_command(): void

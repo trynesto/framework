@@ -1,0 +1,91 @@
+<?php
+
+declare(strict_types=1);
+
+/*
+ * The database, read by DatabaseModule (imported in src/AppModule.php). Everything is driven by .env:
+ * switch ORM_DRIVER or DB_CONNECTION there, no code change needed.
+ */
+
+return [
+    // orm: the built-in ORM (entities + repositories, OrmModule) | prisma: PrismaModule (prisma/schema.prisma) | none
+    'driver' => env('ORM_DRIVER', 'orm'),
+
+    // the connection below that the ORM uses
+    'default' => env('DB_CONNECTION', 'sqlite'),
+
+    'connections' => [
+        'sqlite' => [
+            'driver' => 'sqlite',
+            'url' => env('DB_URL'),
+            // relative to the project root; the file is created on first use
+            'database' => env('DB_DATABASE', 'database/database.sqlite'),
+        ],
+
+        'mysql' => [
+            'driver' => 'mysql',
+            'url' => env('DB_URL'),
+            'host' => env('DB_HOST', '127.0.0.1'),
+            'port' => env('DB_PORT', 3306),
+            'database' => env('DB_DATABASE', 'nesto'),
+            'username' => env('DB_USERNAME', 'root'),
+            'password' => env('DB_PASSWORD', ''),
+            'charset' => env('DB_CHARSET', 'utf8mb4'),
+        ],
+
+        'mariadb' => [
+            'driver' => 'mariadb',
+            'url' => env('DB_URL'),
+            'host' => env('DB_HOST', '127.0.0.1'),
+            'port' => env('DB_PORT', 3306),
+            'database' => env('DB_DATABASE', 'nesto'),
+            'username' => env('DB_USERNAME', 'root'),
+            'password' => env('DB_PASSWORD', ''),
+            'charset' => env('DB_CHARSET', 'utf8mb4'),
+        ],
+
+        'pgsql' => [
+            'driver' => 'pgsql',
+            'url' => env('DB_URL'),
+            'host' => env('DB_HOST', '127.0.0.1'),
+            'port' => env('DB_PORT', 5432),
+            'database' => env('DB_DATABASE', 'nesto'),
+            'username' => env('DB_USERNAME', 'postgres'),
+            'password' => env('DB_PASSWORD', ''),
+        ],
+    ],
+
+    // Entity classes and/or globs; null = the "entities" glob of nesto.config.php (src/**/Entities).
+    // Entities listed in OrmModule::forFeature([...]) are registered too.
+    'entities' => null,
+
+    // Align the tables with the entities on every boot (development only: it alters and drops columns).
+    // In production keep it false and use migrations: php nesto migration:generate / php nesto migrate.
+    'synchronize' => env('DB_SYNCHRONIZE', false),
+
+    // Run pending migrations when the application boots.
+    'migrations_run' => env('DB_MIGRATIONS_RUN', false),
+
+    // Query log, written to the application log (LOG_CHANNEL):
+    // false = failed queries only | true = queries + errors | all | none | "query,error,schema,migration"
+    'logging' => env('DB_LOGGING', false),
+
+    // ORM query result cache: false | database (a query-result-cache table) | cache (the CacheModule store, e.g. Redis)
+    'cache' => env('DB_CACHE', false),
+
+    // Read replicas: ['master' => ['host' => ...], 'slaves' => [['host' => ...], ...]]
+    'replication' => [],
+
+    // Any other OrmModule option: morphMap, subscribers, types, maxQueryExecutionTime, migrationsTransactionMode...
+    'orm' => [],
+
+    // ORM_DRIVER=prisma
+    'prisma' => [
+        // the datasource URL; null = env("DATABASE_URL") of the schema
+        'url' => env('DATABASE_URL'),
+        // schema.prisma path; null = nesto.config.php "prisma.schema", else prisma/schema.prisma
+        'schema' => null,
+        // printed on stdout: ['query', 'info', 'warn', 'error'] (failed queries always reach the application log)
+        'log' => [],
+    ],
+];

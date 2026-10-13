@@ -28,6 +28,9 @@ constructor injection. Nesto takes care of the plumbing so you can focus on your
 - [Queues](https://nesto.g4t.io/docs/#/application/queues), [task scheduling](https://nesto.g4t.io/docs/#/application/task-scheduling), [events](https://nesto.g4t.io/docs/#/application/events), [caching](https://nesto.g4t.io/docs/#/data/caching) and [rate limiting](https://nesto.g4t.io/docs/#/security/rate-limiting).
 - [Authentication](https://nesto.g4t.io/docs/#/security/authentication) with JWT and an [OpenAPI](https://nesto.g4t.io/docs/#/openapi/introduction) document generated from your code.
 - A [console](https://nesto.g4t.io/docs/#/cli/overview) with generators, and production serving in [FrankenPHP](https://frankenphp.dev) worker mode.
+- Configuration in `.env` and `config/*.php`, like Laravel: switch the data layer (`ORM_DRIVER=orm|prisma|none`), the
+  cache store (`CACHE_DRIVER=memory|file|database|redis`) and the log channel (`LOG_CHANNEL=file|stderr|stdout|stack`)
+  without touching code. Every error the framework catches, PHP warnings and fatal errors included, ends up in the log.
 
 Nesto speaks the PHP standards (PSR-7, 11, 15, 3, 14 and 16), so any Composer package plugs in.
 
@@ -122,7 +125,8 @@ vendor/bin/phpunit
 ```
 
 The database tests also run against PostgreSQL, MySQL and MariaDB when `NESTO_TEST_PGSQL_URL`, `NESTO_TEST_MYSQL_URL`
-and `NESTO_TEST_MARIADB_URL` point at throwaway databases whose name contains `test`. To try a change in an
+and `NESTO_TEST_MARIADB_URL` point at throwaway databases whose name contains `test`, and the Redis cache tests when
+`NESTO_TEST_REDIS_URL` is set (e.g. `redis://127.0.0.1:6379/15`; only keys prefixed `nesto_test:` are touched). To try a change in an
 application, create one against your checkout with `bin/nesto new demo --dev`.
 
 ## Security Vulnerabilities

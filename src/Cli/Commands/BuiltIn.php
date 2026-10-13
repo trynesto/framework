@@ -19,6 +19,7 @@ final class BuiltIn
             GenerateCommand::class,
             RoutesCommand::class,
             InfoCommand::class,
+            CacheClearCommand::class,
             MigrateCommand::class,
             MigrateRevertCommand::class,
             MigrateStatusCommand::class,

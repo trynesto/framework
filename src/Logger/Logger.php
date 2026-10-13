@@ -6,6 +6,9 @@ namespace Nesto\Logger;
 
 use Nesto\Common\Provider;
 use Nesto\Core\Container;
+use Nesto\Logger\Channels\FileChannel;
+use Nesto\Logger\Channels\LogChannel;
+use Nesto\Logger\Channels\StreamChannel;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LoggerTrait;
 use Psr\Log\LogLevel;
@@ -21,9 +24,12 @@ use Psr\Log\LogLevel;
  * Output (STDOUT, errors/fatal on STDERR), coloured when attached to a TTY:
  *   [Nesto] 12345  - 10/12/2026, 7:48:22 PM     LOG [CatsService] Cat created
  *
- * Configuration (process-wide, like Nest's static Logger):
- *   Logger::toFile(__DIR__ . '/storage/app.log');          // write everything to a file instead
- *   Logger::setDefaultLogLevels(['log', 'error', 'warn']); // drop debug/verbose everywhere
+ * Configuration (process-wide, like Nest's static Logger) — `new LoggerModule()` does it from config/logging.php
+ * and LOG_CHANNEL / LOG_PATH / LOG_LEVEL / LOG_DAILY (see LogConfig):
+ *   Logger::useChannel(new FileChannel(storage_path('logs/nesto.log'), daily: true));   // or StreamChannel / StackChannel
+ *   Logger::toFile(__DIR__ . '/storage/app.log');          // shorthand for a FileChannel
+ *   Logger::setMinLevel('info');                           // PSR-3 threshold: drop debug everywhere
+ *   Logger::setDefaultLogLevels(['log', 'error', 'warn']); // or an explicit list of Nest levels
  *   Logger::overrideLogger($monolog);                       // forward every message to a custom PSR-3 logger
  *   Logger::register($container);                           // expose Psr\Log\LoggerInterface to DI
  *
@@ -51,11 +57,26 @@ final class Logger implements LoggerInterface
     private const YELLOW = "\033[33m";
     private const WHITE = "\033[37m";
 
+    /** PSR-3 severity of every level name (Nest names included), lowest first. */
+    public const SEVERITY = [
+        'verbose' => 0, LogLevel::DEBUG => 0,
+        LogLevel::INFO => 1, 'log' => 1,
+        LogLevel::NOTICE => 2,
+        LogLevel::WARNING => 3, 'warn' => 3,
+        LogLevel::ERROR => 4,
+        LogLevel::CRITICAL => 5, 'fatal' => 5,
+        LogLevel::ALERT => 6,
+        LogLevel::EMERGENCY => 7,
+    ];
+
     private static ?LoggerInterface $override = null;
     /** @var list<string>|null null = everything enabled */
     private static ?array $defaultLevels = null;
-    /** @var resource|null */
+    /** Minimum PSR-3 severity (null = everything). */
+    private static ?int $minSeverity = null;
+    /** @var resource|null set by toStream(): wins over the channel (tests capture output this way) */
     private static $stream = null;
+    private static ?LogChannel $channel = null;
     private static ?bool $colors = null;
     private static string $appName = 'Nesto';
 
@@ -74,24 +95,81 @@ final class Logger implements LoggerInterface
         self::$override = $logger instanceof self ? null : $logger;
     }
 
-    /** Append all output to a file (created if missing). */
-    public static function toFile(string $path): void
+    /** Append all output to a file (created if missing): a FileChannel. */
+    public static function toFile(string $path, bool $daily = false, int $maxFiles = 14): void
     {
-        $dir = dirname($path);
-        if (! is_dir($dir)) {
-            mkdir($dir, 0775, true);
-        }
-        $handle = fopen($path, 'ab');
-        if ($handle === false) {
-            throw new \RuntimeException("Logger: cannot open \"$path\" for writing.");
-        }
-        self::$stream = $handle;
+        self::$stream = null;
+        self::useChannel(new FileChannel($path, $daily, $maxFiles));
     }
 
-    /** Write to any stream resource (php://memory in tests), or null to restore STDOUT/STDERR. @param resource|null $stream */
+    /**
+     * Write to any stream resource (php://memory in tests): it wins over the channel while set.
+     * null restores the default (no channel: errors on STDERR, the rest on STDOUT).
+     *
+     * @param resource|null $stream
+     */
     public static function toStream($stream): void
     {
         self::$stream = $stream;
+        if ($stream === null) {
+            self::useChannel(null);
+        }
+    }
+
+    /** Where every Logger writes (null: StreamChannel::console(), errors on STDERR and the rest on STDOUT). */
+    public static function useChannel(?LogChannel $channel): void
+    {
+        if (self::$channel !== null && self::$channel !== $channel) {
+            self::$channel->close();
+        }
+        self::$channel = $channel;
+    }
+
+    public static function channel(): ?LogChannel
+    {
+        return self::$channel;
+    }
+
+    /** PSR-3 threshold for every Logger: 'info' drops debug/verbose (null: everything). */
+    public static function setMinLevel(?string $level): void
+    {
+        if ($level === null || $level === '') {
+            self::$minSeverity = null;
+
+            return;
+        }
+        $severity = self::SEVERITY[strtolower($level)] ?? null;
+        if ($severity === null) {
+            throw new \InvalidArgumentException("Logger: unknown log level \"$level\" (debug, info, notice, warning, error, critical, alert, emergency).");
+        }
+        self::$minSeverity = $severity;
+    }
+
+    public static function minLevel(): ?string
+    {
+        if (self::$minSeverity === null) {
+            return null;
+        }
+
+        return [LogLevel::DEBUG, LogLevel::INFO, LogLevel::NOTICE, LogLevel::WARNING, LogLevel::ERROR, LogLevel::CRITICAL, LogLevel::ALERT, LogLevel::EMERGENCY][self::$minSeverity];
+    }
+
+    /** The colour setting of useColors() (null: auto-detect). */
+    public static function colorSetting(): ?bool
+    {
+        return self::$colors;
+    }
+
+    /** Forget every static setting (channel, stream, levels, override, colours, app name). */
+    public static function reset(): void
+    {
+        self::$override = null;
+        self::$defaultLevels = null;
+        self::$minSeverity = null;
+        self::$stream = null;
+        self::useChannel(null);
+        self::$colors = null;
+        self::$appName = 'Nesto';
     }
 
     /** Force ANSI colours on/off; null = auto-detect (TTY only). */
@@ -161,12 +239,23 @@ final class Logger implements LoggerInterface
             return;
         }
 
-        if (! $this->isEnabled($nestLevel)) {
+        if (! $this->isEnabled($nestLevel) || (self::$minSeverity !== null && (self::SEVERITY[$level] ?? 1) < self::$minSeverity)) {
             return;
         }
 
-        $line = $this->format($nestLevel, (string) $message, $context);
-        $this->write($line, in_array($nestLevel, ['error', 'fatal'], true));
+        if (self::$stream !== null) {
+            fwrite(self::$stream, $this->format($nestLevel, (string) $message, $context) . PHP_EOL);
+
+            return;
+        }
+        $plain = $this->format($nestLevel, (string) $message, $context, false);
+        $colored = self::$colors === false ? $plain : $this->format($nestLevel, (string) $message, $context, true);
+        try {
+            (self::$channel ?? StreamChannel::console())->write($nestLevel, $plain, $colored);
+        } catch (\Throwable $e) {
+            // an unwritable log must not turn into an error of its own: report it once on STDERR, keep going
+            StreamChannel::stderr()->write('error', 'Logger: ' . $e->getMessage() . "\n" . $plain, 'Logger: ' . $e->getMessage() . "\n" . $colored);
+        }
     }
 
     public function verbose(string|\Stringable $message, array $context = []): void
@@ -220,21 +309,6 @@ final class Logger implements LoggerInterface
     }
 
     // ---- internals ---------------------------------------------------------------------------
-
-    private function write(string $line, bool $isError): void
-    {
-        if (self::$stream !== null) {
-            fwrite(self::$stream, $line . PHP_EOL);
-
-            return;
-        }
-        $target = $isError ? 'php://stderr' : 'php://stdout';
-        $handle = fopen($target, 'wb');
-        if ($handle !== false) {
-            fwrite($handle, $line . PHP_EOL);
-            fclose($handle);
-        }
-    }
 
     private function colorsEnabled(): bool
     {

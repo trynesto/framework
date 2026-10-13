@@ -71,8 +71,11 @@ final class PrismaModule implements DynamicModuleFactory
     }
 
     /**
+     * `logger` (a PSR-3 logger, e.g. Nesto\Logger\Logger) receives the client's error and warn events.
+     *
      * @param array{schema?: string, isGlobal?: bool, service?: class-string<PrismaClient>, datasourceUrl?: string,
-     *              log?: list<mixed>, transactionOptions?: array<string, mixed>, checkSchema?: bool, clientOptions?: array<string, mixed>} $options
+     *              log?: list<mixed>, transactionOptions?: array<string, mixed>, checkSchema?: bool, clientOptions?: array<string, mixed>,
+     *              logger?: \Psr\Log\LoggerInterface} $options
      */
     public static function forRoot(array $options = []): DynamicModule
     {
@@ -131,8 +134,15 @@ final class PrismaModule implements DynamicModuleFactory
             ];
         }
         $project->loadEnv();
+        $client = new $service($clientOptions);
+        $logger = $options['logger'] ?? null;
+        if ($logger instanceof \Psr\Log\LoggerInterface) {
+            // failed queries (and engine warnings) reach the application log, whatever `log` prints
+            $client->on('error', static fn (array $event) => $logger->error('prisma:error ' . ($event['message'] ?? '') . (isset($event['target']) ? ' (' . $event['target'] . ')' : '')));
+            $client->on('warn', static fn (array $event) => $logger->warning('prisma:warn ' . ($event['message'] ?? '')));
+        }
 
-        return new $service($clientOptions);
+        return $client;
     }
 
     /** The generated PrismaService of the schema when it exists, else the runtime one. @return class-string<PrismaClient> */
