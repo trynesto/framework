@@ -1,5 +1,5 @@
 <p align="center">
-    <a href="https://modulaphp.g4t.io" target="_blank">
+    <a href="https://nesto.g4t.io" target="_blank">
         <picture>
             <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/trynesto/framework/main/.github/art/nesto-logo-dark.png">
             <img src="https://raw.githubusercontent.com/trynesto/framework/main/.github/art/nesto-logo-light.png" width="400" alt="Nesto Logo">
@@ -20,14 +20,14 @@ Nesto is a PHP framework for building APIs with a clear structure. Your applicat
 declares its controllers and the services it provides, and everything is wired together with PHP attributes and
 constructor injection. Nesto takes care of the plumbing so you can focus on your domain:
 
-- [Modules and dependency injection](https://modulaphp.g4t.io/docs/#/modules), with singleton, request and transient scopes.
-- [Guards](https://modulaphp.g4t.io/docs/#/guards), [pipes](https://modulaphp.g4t.io/docs/#/pipes), [interceptors](https://modulaphp.g4t.io/docs/#/interceptors) and [exception filters](https://modulaphp.g4t.io/docs/#/exception-filters) around every request.
-- [Validation](https://modulaphp.g4t.io/docs/#/application/validation) and [serialization](https://modulaphp.g4t.io/docs/#/application/serialization) declared on plain DTO classes.
-- An [ORM](https://modulaphp.g4t.io/docs/#/data/overview) with entities, relations, a query builder and generated migrations, plus a [Prisma-style client](https://modulaphp.g4t.io/docs/#/prisma/overview), on PostgreSQL, MySQL, MariaDB and SQLite.
-- [File uploads and storage](https://modulaphp.g4t.io/docs/#/files/storage) on local disks and S3.
-- [Queues](https://modulaphp.g4t.io/docs/#/application/queues), [task scheduling](https://modulaphp.g4t.io/docs/#/application/task-scheduling), [events](https://modulaphp.g4t.io/docs/#/application/events), [caching](https://modulaphp.g4t.io/docs/#/data/caching) and [rate limiting](https://modulaphp.g4t.io/docs/#/security/rate-limiting).
-- [Authentication](https://modulaphp.g4t.io/docs/#/security/authentication) with JWT and an [OpenAPI](https://modulaphp.g4t.io/docs/#/openapi/introduction) document generated from your code.
-- A [console](https://modulaphp.g4t.io/docs/#/cli/overview) with generators, and production serving in [FrankenPHP](https://frankenphp.dev) worker mode.
+- [Modules and dependency injection](https://nesto.g4t.io/docs/#/modules), with singleton, request and transient scopes.
+- [Guards](https://nesto.g4t.io/docs/#/guards), [pipes](https://nesto.g4t.io/docs/#/pipes), [interceptors](https://nesto.g4t.io/docs/#/interceptors) and [exception filters](https://nesto.g4t.io/docs/#/exception-filters) around every request.
+- [Validation](https://nesto.g4t.io/docs/#/application/validation) and [serialization](https://nesto.g4t.io/docs/#/application/serialization) declared on plain DTO classes.
+- An [ORM](https://nesto.g4t.io/docs/#/data/overview) with entities, relations, a query builder and generated migrations, plus a [Prisma-style client](https://nesto.g4t.io/docs/#/prisma/overview), on PostgreSQL, MySQL, MariaDB and SQLite.
+- [File uploads and storage](https://nesto.g4t.io/docs/#/files/storage) on local disks and S3.
+- [Queues](https://nesto.g4t.io/docs/#/application/queues), [task scheduling](https://nesto.g4t.io/docs/#/application/task-scheduling), [events](https://nesto.g4t.io/docs/#/application/events), [caching](https://nesto.g4t.io/docs/#/data/caching) and [rate limiting](https://nesto.g4t.io/docs/#/security/rate-limiting).
+- [Authentication](https://nesto.g4t.io/docs/#/security/authentication) with JWT and an [OpenAPI](https://nesto.g4t.io/docs/#/openapi/introduction) document generated from your code.
+- A [console](https://nesto.g4t.io/docs/#/cli/overview) with generators, and production serving in [FrankenPHP](https://frankenphp.dev) worker mode.
 
 Nesto speaks the PHP standards (PSR-7, 11, 15, 3, 14 and 16), so any Composer package plugs in.
 
@@ -97,8 +97,8 @@ Or let the console write it for you: `php nesto g resource cats`.
 
 ## Learning Nesto
 
-The [Nesto documentation](https://modulaphp.g4t.io/docs/) covers every part of the framework, and its
-[tutorial](https://modulaphp.g4t.io/docs/#/tutorial/introduction) builds a complete blog API step by step, from
+The [Nesto documentation](https://nesto.g4t.io/docs/) covers every part of the framework, and its
+[tutorial](https://nesto.g4t.io/docs/#/tutorial/introduction) builds a complete blog API step by step, from
 `nesto new` to production.
 
 ## Requirements
